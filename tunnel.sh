@@ -9,13 +9,13 @@ PORT="${PORT:-8000}"
 # 1) Levantar el servidor si no está corriendo
 if ! (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then
   echo "▶ Iniciando servidor en el puerto $PORT…"
-  ./run.sh &
+  setsid nohup ./run.sh > /tmp/cashflow-server.log 2>&1 < /dev/null &
   for _ in $(seq 1 30); do
     (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null && break
     sleep 1
   done
 fi
-echo "✔ Servidor local: http://localhost:$PORT"
+echo "✔ Servidor local: http://localhost:$PORT (log: /tmp/cashflow-server.log)"
 
 MODE="${1:-auto}"
 if [ "$MODE" = "auto" ]; then
