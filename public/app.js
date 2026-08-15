@@ -30,7 +30,7 @@ function connect() {
       roomId = msg.roomId;
       isHost = msg.isHost;
       state = msg.state;
-      $("lobby").classList.remove("active");
+      $("lobby").classList.add("hidden");
       $("game").classList.remove("hidden");
       render();
     } else if (msg.type === "state") {

@@ -153,6 +153,9 @@ async def test_frontend_renders_and_plays(server_url, browser):
     await cdp.wait_js("!document.getElementById('game').classList.contains('hidden')")
     room = await cdp.eval("document.getElementById('room-id').textContent")
     assert room and len(room) == 6
+    # la ventana de ingreso debe OCULTARSE de verdad (no solo quitar una clase)
+    assert await cdp.eval("getComputedStyle(document.getElementById('lobby')).display === 'none'")
+    assert await cdp.eval("getComputedStyle(document.getElementById('game')).display !== 'none'")
 
     # solo con 1 jugador se muestra el aviso de espera (y no el botón de inicio)
     assert await cdp.eval("!document.getElementById('waiting-hint').classList.contains('hidden')")
