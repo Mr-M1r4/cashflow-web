@@ -4,6 +4,7 @@ import asyncio
 import json
 import uuid
 
+from . import data
 from .engine import Game
 
 
@@ -95,7 +96,16 @@ class Room:
         elif t == "choose_profession":
             if self.game.phase != "selecting":
                 return
-            self.game.choose_profession(pid, msg.get("value"))
+            p = next((q for q in self.game.players if q["id"] == pid), None)
+            if p is None or p["profession"] is not None:
+                return
+            value = msg.get("value")
+            if not isinstance(value, str) or value not in data.PROFESSIONS_BY_ID:
+                return
+            if any(q["profession"] and q["profession"]["id"] == value for q in self.game.players):
+                await self.send_to(pid, {"type": "error", "message": "Esa profesión ya está ocupada."})
+                return
+            self.game.choose_profession(pid, value)
             if self.game.all_chose() and not self.game_started:
                 self.game_started = True
                 asyncio.ensure_future(self.game.begin())

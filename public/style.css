@@ -78,6 +78,12 @@ input[type=text], input[type=number], select {
 .error { color: var(--red); min-height: 18px; font-size: 13px; font-weight: 600; }
 #lobby-error.info { color: var(--green); }
 
+.game-error {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--red); color: #fff; padding: 10px 16px;
+  border-radius: 8px; font-weight: 600; z-index: 60;
+}
+
 /* ---------- game layout ---------- */
 .game { display: flex; flex-direction: column; height: 100vh; }
 

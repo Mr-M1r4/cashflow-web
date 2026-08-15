@@ -1,11 +1,14 @@
 """Cashflow web server: FastAPI + WebSocket + static files."""
 
 import json
+import logging
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 
 from game.rooms import RoomManager
+
+log = logging.getLogger("cashflow")
 
 app = FastAPI(title="Cashflow Online")
 manager = RoomManager()
@@ -51,7 +54,10 @@ async def ws_endpoint(ws: WebSocket):
             elif pid is not None:
                 room = next((r for r in manager.rooms.values() if pid in r.players), None)
                 if room is not None:
-                    await room.handle_message(ws, pid, msg)
+                    try:
+                        await room.handle_message(ws, pid, msg)
+                    except Exception:  # a bad message must never kill the connection
+                        log.exception("error manejando mensaje del cliente")
     except WebSocketDisconnect:
         pass
     finally:

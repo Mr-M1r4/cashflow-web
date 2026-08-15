@@ -173,11 +173,17 @@ async def test_frontend_renders_and_plays(server_url, browser):
     await cdp.eval("document.getElementById('btn-start').click()")
     await cdp.wait_js("document.getElementById('turn-info').textContent.includes('Eligiendo')")
 
-    # --- both pick first available profession (guest waits to see host's pick)
-    await cdp.wait_js("!!document.querySelector('.prof-item:not(.taken)')")
+    # --- profession selection: the guest picks first, the host tries the SAME one → error toast
+    await cdp2.wait_js("!!document.querySelector('.prof-item:not(.taken)')")
+    await cdp2.eval("document.querySelector('.prof-item:not(.taken)').click()")
+    await cdp.wait_js("state.players.filter(p => p.profession).length === 1")
+    taken_id = await cdp2.eval("state.players.find(p => p.profession).profession.id")
+    await cdp.eval(f"chooseProf({json.dumps(taken_id)})")
+    await cdp.wait_js("!document.getElementById('game-error').classList.contains('hidden')")
+    toast = await cdp.eval("document.getElementById('game-error').textContent")
+    assert toast and "ocupada" in toast.lower(), f"toast inesperado: {toast!r}"
+    # el host elige otra disponible
     await cdp.eval("document.querySelector('.prof-item:not(.taken)').click()")
-    await cdp2.wait_js("state.players.filter(p => p.profession).length === 1")
-    await cdp2.eval("document.querySelector('.prof-item').click()")
 
     # --- playing
     await cdp.wait_js("document.getElementById('turn-info').textContent.startsWith('Turno de')")

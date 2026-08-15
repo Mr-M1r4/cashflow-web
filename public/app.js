@@ -38,11 +38,11 @@ function connect() {
       yourId = msg.yourId;
       render();
     } else if (msg.type === "error") {
-      $("lobby-error").textContent = msg.message;
+      showError(msg.message);
     }
   };
   ws.onclose = () => {
-    $("lobby-error").textContent = "Conexión perdida. Recargá la página.";
+    showError("Conexión perdida. Recargá la página.");
   };
 }
 
@@ -531,6 +531,18 @@ function chooseProf(id) {
 }
 
 /* ================= Eventos UI ================= */
+
+function showError(text) {
+  if ($("lobby").classList.contains("hidden")) {
+    const el = $("game-error");
+    el.textContent = text;
+    el.classList.remove("hidden");
+    clearTimeout(showError._t);
+    showError._t = setTimeout(() => el.classList.add("hidden"), 4000);
+  } else {
+    $("lobby-error").textContent = text;
+  }
+}
 
 function lobbyMsg(text, isError) {
   const el = $("lobby-error");
