@@ -532,9 +532,19 @@ function chooseProf(id) {
 
 /* ================= Eventos UI ================= */
 
+function lobbyMsg(text, isError) {
+  const el = $("lobby-error");
+  el.textContent = text;
+  el.classList.toggle("error", !!isError);
+  el.classList.toggle("info", !isError);
+  clearTimeout(lobbyMsg._t);
+  lobbyMsg._t = setTimeout(() => { el.textContent = ""; }, isError ? 5000 : 0);
+}
+
 $("btn-create").onclick = () => {
   const name = $("lobby-name").value.trim();
-  if (!name) { $("lobby-error").textContent = "Escribí tu nombre."; return; }
+  if (!name) { lobbyMsg("Escribí tu nombre.", true); $("lobby-name").focus(); return; }
+  lobbyMsg("Conectando…", false);
   connect();
   // esperamos conexión abierta
   ws.onopen = () => send({ type: "join", name, roomId: "" });
@@ -544,8 +554,9 @@ $("btn-create").onclick = () => {
 $("btn-join").onclick = () => {
   const name = $("lobby-name").value.trim();
   const room = $("lobby-room").value.trim();
-  if (!name) { $("lobby-error").textContent = "Escribí tu nombre."; return; }
-  if (!room) { $("lobby-error").textContent = "Ingresá el código de sala."; return; }
+  if (!name) { lobbyMsg("Escribí tu nombre.", true); $("lobby-name").focus(); return; }
+  if (!room) { lobbyMsg("Ingresá el código de sala.", true); $("lobby-room").focus(); return; }
+  lobbyMsg("Conectando…", false);
   connect();
   ws.onopen = () => send({ type: "join", name, roomId: room });
   $("lobby-name").disabled = true;

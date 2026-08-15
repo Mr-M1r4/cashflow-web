@@ -75,7 +75,8 @@ input[type=text], input[type=number], select {
 .subtitle { color: var(--muted); text-align: center; }
 .lobby-actions { display: flex; gap: 10px; }
 .lobby-actions button { flex: 1; }
-.error { color: var(--red); min-height: 18px; font-size: 13px; }
+.error { color: var(--red); min-height: 18px; font-size: 13px; font-weight: 600; }
+#lobby-error.info { color: var(--green); }
 
 /* ---------- game layout ---------- */
 .game { display: flex; flex-direction: column; height: 100vh; }
