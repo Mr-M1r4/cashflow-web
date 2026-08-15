@@ -38,10 +38,11 @@ despertar cuando alguien entra. Mientras haya una partida conectada no se duerme
 La PC debe quedar encendida mientras juegan.
 
 ```bash
-# Tailscale (URL estable y gratuita; instalá la app una vez)
+# Tailscale (URL pública y gratuita; instalá la app una vez)
 sudo apt install tailscale && sudo tailscale up
 ./tunnel.sh tailscale
-# → te da una URL https://<tu-nombre>.ts.net/ para compartir
+# → te da una URL pública https://<tu-nombre>.ts.net/ para compartir
+#   (usa "funnel": cualquiera entra con la URL, sin instalar nada)
 
 # ngrok (alternativa; requiere cuenta gratis + authtoken)
 ./tunnel.sh ngrok

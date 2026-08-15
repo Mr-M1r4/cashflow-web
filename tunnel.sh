@@ -31,7 +31,14 @@ case "$MODE" in
       sudo tailscale up || tailscale up
     fi
     echo "▶ Publicando con Tailscale…"
-    tailscale serve --bg "$PORT" 2>/dev/null || tailscale serve "$PORT"
+    # funnel = público (cualquiera con la URL puede entrar, sin instalar Tailscale)
+    if tailscale funnel --bg "$PORT" 2>/dev/null; then
+      :
+    elif tailscale serve --bg "$PORT" 2>/dev/null; then
+      echo "  (sin funnel: solo dispositivos de tu tailnet pueden entrar)"
+    else
+      tailscale funnel "$PORT" || tailscale serve "$PORT"
+    fi
     FQDN="$(tailscale status --json 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["Self"]["DNSName"].rstrip("."))' 2>/dev/null || true)"
     echo "✔ ¡Listo! Compartí: https://${FQDN:-<tu-nombre>.ts.net}/"
     echo "  (más adelante: tailscale serve --bg --https=443 --http=80 $PORT, o tailscale serve reset para despublicar)"
