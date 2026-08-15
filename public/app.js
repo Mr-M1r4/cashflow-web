@@ -10,6 +10,8 @@ let state = null;
 let seenMove = -1;
 let animGuard = false;
 let myProfessionChosen = false;
+let lastCash = {};
+let pendingFx = null;
 
 const usd = new Intl.NumberFormat("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -61,7 +63,9 @@ function render() {
   renderLog();
   renderChat();
   renderDice();
+  renderTurnPill();
   renderModal();
+  state.players.forEach((p) => { lastCash[p.id] = p.cash; });
 }
 
 function renderHeader() {
@@ -170,6 +174,7 @@ function positionToken(p, idxOnCell) {
     t = document.createElement("div");
     t.className = "token";
     t.dataset.pid = p.id;
+    t.innerHTML = `<span class="tdot"></span><span class="tname"></span>`;
     $("board").appendChild(t);
   }
   const ring = p.inFastTrack ? "fast" : "rat";
@@ -180,9 +185,13 @@ function positionToken(p, idxOnCell) {
   const off = (idxOnCell - 0) * 2.5;
   t.style.left = (px.x + off * 3) + "px";
   t.style.top = (px.y - off * 6) + "px";
-  t.style.background = COLORS[playerIndex(p.id)];
-  t.textContent = p.name[0].toUpperCase();
+  const dot = t.querySelector(".tdot");
+  dot.style.background = COLORS[playerIndex(p.id)];
+  dot.textContent = p.name[0].toUpperCase();
+  t.querySelector(".tname").textContent = p.name;
   t.classList.toggle("me", p.id === yourId);
+  const cur = state.phase === "playing" && state.players[state.turnIndex];
+  t.classList.toggle("active", !!(cur && cur.id === p.id));
   return t;
 }
 
@@ -259,12 +268,27 @@ function renderPlayers() {
 
 /* ================= Log y chat ================= */
 
+function logClass(line) {
+  const emoji = line.trim()[0];
+  if (emoji === "💰") return "money";
+  if (emoji === "📈" || emoji === "📉") return "market";
+  if (emoji === "👶") return "baby";
+  if (emoji === "💼" || emoji === "📉") return "bad";
+  if (emoji === "🏆") return "win";
+  if (emoji === "🚀") return "fast";
+  if (emoji === "🎲" || emoji === "🏃") return "move";
+  if (emoji === "📊" || emoji === "📗" || emoji === "📘" || emoji === "🏠" || emoji === "🏢") return "deal";
+  if (emoji === "🤝") return "charity";
+  if (emoji === "▶") return "turn";
+  return "";
+}
+
 function renderLog() {
   const el = $("log-list");
   el.innerHTML = "";
   (state.logs || []).forEach((line) => {
     const d = document.createElement("div");
-    d.className = "entry";
+    d.className = "entry " + logClass(line);
     d.innerHTML = line.replace(/`/g, "");
     el.appendChild(d);
   });
@@ -290,31 +314,161 @@ function renderDice() {
   const mv = state.lastMove;
   if (mv && mv.moveId !== seenMove) {
     seenMove = mv.moveId;
-    el.innerHTML = mv.dice.map((d) => `<div class="die">${d}</div>`).join("");
-    if (!animGuard) animateMove(mv);
+    const mover = playerById(mv.playerId);
+    pendingFx = mover
+      ? { pid: mv.playerId, delta: mover.cash - (lastCash[mv.playerId] ?? mover.cash) }
+      : null;
+    if (!animGuard) animateTurn(mv);
   }
-  if (!mv) el.innerHTML = "";
+  if (!mv) { el.innerHTML = ""; el.classList.add("hidden"); }
+  else el.classList.remove("hidden");
+}
+
+async function animateDice(values) {
+  const el = $("dice-display");
+  el.innerHTML = values.map(() => `<div class="die">…</div>`).join("");
+  const dice = [...el.querySelectorAll(".die")];
+  const t0 = performance.now();
+  while (performance.now() - t0 < 650) {
+    dice.forEach((d) => { d.textContent = 1 + Math.floor(Math.random() * 6); d.classList.add("rolling"); });
+    await sleep(60);
+  }
+  dice.forEach((d, i) => {
+    d.textContent = values[i];
+    d.classList.remove("rolling");
+    d.classList.add("settled");
+  });
 }
 
 /* ================= Animación de movimiento ================= */
 
+function cellFor(ring, i) {
+  return document.querySelector(`.cell[data-ring="${ring}"][data-i="${i}"]`);
+}
+
+function flashCell(ring, i, cls = "flash") {
+  const c = cellFor(ring, i);
+  if (!c) return;
+  c.classList.add(cls);
+  setTimeout(() => c.classList.remove(cls), 220);
+}
+
 async function animateMove(move) {
   const p = playerById(move.playerId);
   if (!p) return;
-  animGuard = true;
   const n = move.fast ? 12 : 24;
+  const ring = move.fast ? "fast" : "rat";
   const radius = move.fast ? 0.58 : 0.92;
   const steps = move.dice.reduce((a, x) => a + x, 0);
+  const t = document.querySelector(`.token[data-pid="${p.id}"]`);
+  if (t) t.classList.add("moving");
   let cur = move.from;
   for (let s = 1; s <= steps; s++) {
     cur = (cur + 1) % n;
     const px = boardPos(n, cur, radius);
-    const t = document.querySelector(`.token[data-pid="${p.id}"]`);
     if (t) { t.style.left = px.x + "px"; t.style.top = px.y + "px"; }
-    await sleep(140);
+    flashCell(ring, cur);
+    await sleep(170);
   }
-  animGuard = false;
-  renderTokens();
+  if (t) { t.classList.remove("moving"); t.classList.add("landed"); }
+  const cell = cellFor(ring, move.to);
+  if (cell) { cell.classList.add("landing"); setTimeout(() => cell.classList.remove("landing"), 1100); }
+  setTimeout(() => t && t.classList.remove("landed"), 700);
+}
+
+/* ================= Banner de aterrizaje ================= */
+
+const LANDING_TEXT = {
+  PAYDAY:    { icon: "💵", text: "Cobraste tu día de pago. ¡Salario y flujo de caja a la bolsa!" },
+  SMALL:     { icon: "📗", text: "Hay una oportunidad menor para invertir. ¿Te animás?" },
+  BIG:       { icon: "📘", text: "Gran oportunidad de negocio en la mira. ¡No la dejes pasar!" },
+  MARKET:    { icon: "📈", text: "El mercado se movió. Mirá las cartas y decidí." },
+  DOODAD:    { icon: "🛍️", text: "Baratijas por todos lados. ¡Ojo con el efectivo!" },
+  CHARITY:   { icon: "🤝", text: "Casilla de caridad. Doná 10% y tirá con 1 dado el próximo turno." },
+  BABY:      { icon: "👶", text: "¡Felicitaciones! Tuviste un hijo y subieron tus gastos." },
+  DOWNSIZE:  { icon: "💼", text: "¡Te despidieron! No cobrás salario durante unos turnos." },
+  CASHFLOW:  { icon: "💰", text: "Día de flujo de efectivo en la pista rápida. ¡A cobrar!" },
+  OPPORTUNITY: { icon: "💡", text: "Oportunidad a tu alcance. ¡Invertí para crecer!" },
+  DREAM:     { icon: "🌟", text: "Tu sueño te espera. ¿Te alcanza el efectivo para comprarlo?" },
+};
+
+function showLandingBanner(move) {
+  const ring = move.fast ? state.fastBoard : state.ratBoard;
+  const labels = move.fast ? state.fastLabels : state.ratLabels;
+  const type = ring[move.to];
+  const info = LANDING_TEXT[type] || { icon: "•", text: "" };
+  const name = (labels[type] || type).replace(/\n/g, " ");
+  const player = playerById(move.playerId);
+  const banner = $("landing-banner");
+  banner.classList.remove("hidden");
+  banner.innerHTML = `<div class="lb-icon">${info.icon}</div>
+    <div class="lb-body">
+      <div class="lb-name">${name}</div>
+      <div class="lb-text">${info.text}</div>
+      <div class="lb-player" style="--c:${player ? COLORS[playerIndex(player.id)] : "#fff"}">${player ? player.name : ""}</div>
+    </div>`;
+  banner.style.borderColor = state.boardMeta[(move.fast ? "fast" : "rat") + "Colors"][type];
+  banner.classList.remove("pop");
+  void banner.offsetWidth;
+  banner.classList.add("pop");
+  clearTimeout(showLandingBanner._t);
+  showLandingBanner._t = setTimeout(() => banner.classList.add("hidden"), 4200);
+}
+
+/* ================= Efecto de dinero flotante ================= */
+
+function floatMoneyFx() {
+  if (!pendingFx || pendingFx.delta === 0) return;
+  const { pid, delta } = pendingFx;
+  pendingFx = null;
+  const t = document.querySelector(`.token[data-pid="${pid}"]`);
+  if (!t) return;
+  const fx = document.createElement("div");
+  fx.className = "fx-money " + (delta > 0 ? "gain" : "lose");
+  fx.textContent = (delta > 0 ? "+" : "-") + usd.format(Math.abs(delta));
+  const r = t.getBoundingClientRect();
+  const boardR = $("board").getBoundingClientRect();
+  fx.style.left = (r.left - boardR.left + r.width / 2 - 30) + "px";
+  fx.style.top = (r.top - boardR.top - 6) + "px";
+  $("money-fx").appendChild(fx);
+  setTimeout(() => fx.remove(), 1600);
+}
+
+async function animateTurn(move) {
+  animGuard = true;
+  try {
+    await animateDice(move.dice);
+    await animateMove(move);
+    showLandingBanner(move);
+    floatMoneyFx();
+  } finally {
+    animGuard = false;
+    renderTokens();
+  }
+}
+
+/* ================= Turno (pill no bloqueante) ================= */
+
+function renderTurnPill() {
+  const pill = $("turn-pill");
+  if (state.phase !== "playing" || !state.pending) {
+    pill.classList.add("hidden");
+    pill.innerHTML = "";
+    return;
+  }
+  const pend = state.pending;
+  pill.classList.remove("hidden");
+  if (pend.playerId === yourId) {
+    if (pend.kind === "roll") {
+      pill.innerHTML = `<div class="pill-box mine"><span>🎲 <b>Es tu turno</b></span>
+        <button class="primary" onclick="send({type:'roll'})">Tirar dados</button></div>`;
+    } else {
+      pill.innerHTML = `<div class="pill-box mine"><span>📋 <b>Tomá una decisión</b> en la tarjeta</span></div>`;
+    }
+  } else {
+    const p = playerById(pend.playerId);
+    pill.innerHTML = `<div class="pill-box wait"><span>⏳ <b>${p ? p.name : "Jugador"}</b> está jugando…</span></div>`;
+  }
 }
 
 /* ================= Modales ================= */
@@ -330,23 +484,12 @@ function renderModal() {
   if (!pending) { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
 
   if (pending.playerId === yourId) {
-    if (pending.kind === "roll") showRoll(modal);
-    else showChoice(modal);
+    if (pending.kind === "roll") { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+    showChoice(modal);
   } else {
-    const p = playerById(pending.playerId);
-    modal.classList.remove("hidden");
-    modal.innerHTML = `<div class="modal-box waiting"><div>⏳ Esperando a <b>${p ? p.name : "jugador"}</b>…</div></div>`;
+    modal.classList.add("hidden");
+    modal.innerHTML = "";
   }
-}
-
-function showRoll(modal) {
-  modal.classList.remove("hidden");
-  modal.innerHTML = `<div class="modal-box">
-    <div class="waiting">Es tu turno</div>
-    <div class="modal-actions">
-      <button class="primary big" onclick="send({type:'roll'})">🎲 Tirar dados</button>
-    </div>
-  </div>`;
 }
 
 function showSelection(modal) {

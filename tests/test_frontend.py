@@ -197,14 +197,17 @@ async def test_frontend_renders_and_plays(server_url, browser):
 
     # --- play ~25 actions by clicking the real buttons in both tabs
     clicker = """(() => {
+      const pill = document.getElementById('turn-pill');
+      if (pill && !pill.classList.contains('hidden')) {
+        const pb = pill.querySelector('button');
+        if (pb && /dados/i.test(pb.textContent)) { pb.click(); return 'roll'; }
+      }
       const m = document.getElementById('modal');
       if (!m || m.classList.contains('hidden')) return 'none';
       const btns = [...m.querySelectorAll('button')];
       const pass = btns.find(b => /Pasar|No |Ignorar|resististe/i.test(b.textContent));
-      const roll = btns.find(b => /dados/i.test(b.textContent));
       const buy = btns.find(b => /Comprar/i.test(b.textContent));
       const dona = btns.find(b => /Donar/i.test(b.textContent));
-      if (roll) { roll.click(); return 'roll'; }
       if (dona) { dona.click(); return 'donar'; }
       if (pass) { pass.click(); return 'pass'; }
       if (buy) { buy.click(); return 'buy'; }
