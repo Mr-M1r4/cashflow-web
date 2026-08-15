@@ -70,6 +70,17 @@ function renderHeader() {
   const startBtn = $("btn-start");
   const canStart = isHost && state.phase === "lobby" && state.players.length >= 2;
   startBtn.classList.toggle("hidden", !canStart);
+  const hint = $("waiting-hint");
+  if (state.phase === "lobby") {
+    if (state.players.length < 2) {
+      hint.classList.remove("hidden");
+      hint.textContent = `Esperando jugadores… (mínimo 2). Compartí el código ${roomId} con un amigo.`;
+    } else {
+      hint.classList.add("hidden");
+    }
+  } else {
+    hint.classList.add("hidden");
+  }
   if (state.phase === "playing" || state.phase === "over") {
     const cur = state.players[state.turnIndex];
     $("turn-info").textContent = state.phase === "over" ? "🏆 ¡Juego terminado!" : (cur ? `Turno de: ${cur.name}` : "");

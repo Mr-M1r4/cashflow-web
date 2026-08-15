@@ -154,6 +154,11 @@ async def test_frontend_renders_and_plays(server_url, browser):
     room = await cdp.eval("document.getElementById('room-id').textContent")
     assert room and len(room) == 6
 
+    # solo con 1 jugador se muestra el aviso de espera (y no el botón de inicio)
+    assert await cdp.eval("!document.getElementById('waiting-hint').classList.contains('hidden')")
+    assert "mínimo 2" in await cdp.eval("document.getElementById('waiting-hint').textContent")
+    assert await cdp.eval("document.getElementById('btn-start').classList.contains('hidden')")
+
     # --- second player joins the same room
     await cdp2.wait_js("document.readyState === 'complete' && !!document.getElementById('lobby-name')")
     await cdp2.eval("document.getElementById('lobby-name').value = 'Beto'")
