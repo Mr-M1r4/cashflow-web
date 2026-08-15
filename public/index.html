@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashflow Online — Carrera de Ratas</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ Lobby ============ -->
+<div id="lobby" class="overlay active">
+  <div class="lobby-box">
+    <h1>🐀 CASHFLOW <span>Online</span></h1>
+    <p class="subtitle">Escapá de la carrera de ratas. Ingreso pasivo &gt; gastos. ¡Llegá a la pista rápida y comprá tu sueño!</p>
+    <input id="lobby-name" type="text" maxlength="20" placeholder="Tu nombre" value="">
+    <div class="lobby-actions">
+      <button id="btn-create" class="primary">Crear sala</button>
+      <button id="btn-join" class="secondary">Unirse a sala</button>
+    </div>
+    <input id="lobby-room" type="text" maxlength="6" placeholder="Código de sala (si te unís)">
+    <p id="lobby-error" class="error"></p>
+  </div>
+</div>
+
+<!-- ============ Game ============ -->
+<div id="game" class="game hidden">
+  <header>
+    <div class="brand">🐀 CASHFLOW</div>
+    <div id="room-info">Sala: <b id="room-id"></b> <button id="btn-copy-room" title="Copiar código">📋</button></div>
+    <div id="turn-info"></div>
+    <button id="btn-start" class="primary hidden">Empezar partida</button>
+  </header>
+
+  <div class="layout">
+    <div class="board-wrap">
+      <div id="board"></div>
+      <div id="dice-display"></div>
+    </div>
+
+    <aside class="side">
+      <div id="players"></div>
+      <div id="log">
+        <div class="log-title">Registro</div>
+        <div id="log-list"></div>
+      </div>
+      <div id="chat">
+        <div id="chat-list"></div>
+        <div class="chat-input">
+          <input id="chat-text" type="text" maxlength="300" placeholder="Escribí un mensaje...">
+          <button id="chat-send">➤</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ============ Modales ============ -->
+<div id="modal" class="overlay hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
