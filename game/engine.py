@@ -313,6 +313,7 @@ class Game:
             max_shares = int(p["cash"] // card["price"])
             self.last_card["maxShares"] = max_shares
             if max_shares <= 0:
+                await self.wait_for(p["id"], {"continue"})
                 self._log(f"📊 {p['name']} no tiene efectivo para comprar {card['name']}.")
                 return
             msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"shares": 0}})
@@ -339,6 +340,7 @@ class Game:
             afford = p["cash"] >= card["down"]
             self.last_card["afford"] = afford
             if not afford:
+                await self.wait_for(p["id"], {"continue"})
                 self._log(f"{p['name']} no puede pagar el anticipo de {fmt(card['down'])} para {card['name']}.")
                 return
             msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"buy": False}})
@@ -364,6 +366,7 @@ class Game:
         afford = p["cash"] >= card["cost"]
         self.last_card = {"deck": "doodad", "card": card, "afford": afford}
         if not afford:
+            await self.wait_for(p["id"], {"continue"})
             self._log(f"{p['name']} no puede pagar {card['name']} ({fmt(card['cost'])}).")
             return
         msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"buy": False}})
@@ -395,6 +398,7 @@ class Game:
             max_shares = int(p["cash"] // card["price"])
             self.last_card = {"deck": "market", "card": card, "maxShares": max_shares}
             if max_shares <= 0:
+                await self.wait_for(p["id"], {"continue"})
                 self._log(f"{p['name']} no tiene efectivo para aprovechar la oferta de {card['symbol']}.")
                 return
             msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"shares": 0}})

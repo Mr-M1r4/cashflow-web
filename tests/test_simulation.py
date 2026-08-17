@@ -30,6 +30,8 @@ async def responder(game):
             p = next((q for q in game.players if q["id"] == pid), None)
             if pend["kind"] == "roll":
                 game._push_msg(pid, {"type": "roll"})
+            elif pend["kind"] == "continue":
+                game._push_msg(pid, {"type": "continue"})
             else:
                 lc = getattr(game, "last_card", None)
                 val = {"buy": False}

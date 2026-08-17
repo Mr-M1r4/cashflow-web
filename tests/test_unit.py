@@ -438,6 +438,8 @@ def test_full_game_reaches_over():
         kinds = tuple(kinds)
         if "roll" in kinds:
             g._push_msg(pid, {"type": "roll"})
+        elif "continue" in kinds:
+            g._push_msg(pid, {"type": "continue"})
         else:
             player = next((p for p in g.players if p["id"] == pid), None)
             lc = g.last_card
@@ -469,11 +471,12 @@ def test_full_game_reaches_over():
 
 # ------------------------------------------------ info-card / can't-afford flows
 
-def test_unaffordable_stock_sets_last_card_no_pending():
+def test_unaffordable_stock_sets_last_card_and_waits():
     g, _ = make_game()
     p = g.players[0]
     p["cash"] = 1
     card = next(c for c in data.SMALL_DEALS if c["kind"] == "stock" and c["price"] > 1)
+    answer(g, "p0", {"type": "continue"})
     run(g.handle_deal(p, card, "small"))
     assert g.last_card is not None
     assert g.last_card["deck"] == "small"
@@ -482,11 +485,12 @@ def test_unaffordable_stock_sets_last_card_no_pending():
     assert p["cash"] == 1
 
 
-def test_unaffordable_realestate_sets_last_card_no_pending():
+def test_unaffordable_realestate_sets_last_card_and_waits():
     g, _ = make_game()
     p = g.players[0]
     p["cash"] = 1
     card = data.BIG_DEALS[0]
+    answer(g, "p0", {"type": "continue"})
     run(g.handle_deal(p, card, "big"))
     assert g.last_card is not None
     assert g.last_card["deck"] == "big"
@@ -496,11 +500,12 @@ def test_unaffordable_realestate_sets_last_card_no_pending():
     assert not p["realEstate"]
 
 
-def test_unaffordable_doodad_sets_last_card_no_pending():
+def test_unaffordable_doodad_sets_last_card_and_waits():
     g, _ = make_game()
     p = g.players[0]
     p["cash"] = 1
     card = data.DOODADS[0]
+    answer(g, "p0", {"type": "continue"})
     run(g.handle_doodad(p, card))
     assert g.last_card is not None
     assert g.last_card["deck"] == "doodad"
@@ -509,17 +514,59 @@ def test_unaffordable_doodad_sets_last_card_no_pending():
     assert p["cash"] == 1
 
 
-def test_unaffordable_market_stock_sets_last_card_no_pending():
+def test_unaffordable_market_stock_sets_last_card_and_waits():
     g, _ = make_game()
     p = g.players[0]
     p["cash"] = 1
     card = next(c for c in data.MARKET_CARDS if c["kind"] == "stockBuy" and c["price"] > 1)
+    answer(g, "p0", {"type": "continue"})
     run(g.handle_market(p, card))
     assert g.last_card is not None
     assert g.last_card["deck"] == "market"
     assert g.last_card["maxShares"] == 0
     assert g.pending is None
     assert p["cash"] == 1
+
+
+def test_continue_gate_blocks_until_acknowledged():
+    """Engine blocks on wait_for('continue') until client sends continue."""
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = data.DOODADS[0]
+
+    blocked = [True]
+
+    async def run_handler():
+        await g.handle_doodad(p, card)
+        blocked[0] = False
+
+    async def tick_and_ack():
+        await asyncio.sleep(0.05)
+        assert blocked[0], "handler should be blocked on wait_for"
+        assert g.pending is not None
+        assert g.pending["kind"] == "continue"
+        g._push_msg(p["id"], {"type": "continue"})
+        g.room._input_event.set()
+
+    async def both():
+        await asyncio.gather(run_handler(), tick_and_ack())
+
+    run(both())
+    assert not blocked[0]
+    assert g.pending is None
+
+
+def test_continue_gate_does_not_advance_turn():
+    """After continue gate resolves, last_card is preserved until next do_turn clears it."""
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = next(c for c in data.SMALL_DEALS if c["kind"] == "stock" and c["price"] > 1)
+    answer(g, "p0", {"type": "continue"})
+    run(g.handle_deal(p, card, "small"))
+    assert g.last_card is not None
+    assert g.last_card["maxShares"] == 0
 
 
 def test_affordable_stock_sets_pending():

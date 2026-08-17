@@ -502,6 +502,7 @@ function renderModal() {
   const pending = state.pending;
   if (pending && pending.playerId === yourId) {
     if (pending.kind === "roll") { _infoCardKey = null; modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+    if (pending.kind === "continue") { _infoCardKey = JSON.stringify(state.lastCard || {}); showInfoCard(modal); return; }
     _infoCardKey = state.lastCard ? JSON.stringify(state.lastCard) : null;
     showChoice(modal);
     return;
@@ -558,6 +559,11 @@ function showInfoCard(modal) {
   if (!lc) { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
   modal.classList.remove("hidden");
 
+  const isMyContinue = state.pending && state.pending.playerId === yourId && state.pending.kind === "continue";
+  const actionBtn = isMyContinue
+    ? `<button class="primary" onclick="send({type:'continue'});$('modal').classList.add('hidden')">Seguir</button>`
+    : `<button onclick="$('modal').classList.add('hidden')">Cerrar</button>`;
+
   if (lc.deck === "small" || lc.deck === "big") {
     const card = lc.card;
     if (card.kind === "stock") {
@@ -566,7 +572,7 @@ function showInfoCard(modal) {
         <div class="card-name">${card.name}</div>
         <div class="card-text">Precio: <b>${usd.format(card.price)}</b> por acción.</div>
         <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo para comprar acciones.</div>
-        <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+        <div class="modal-actions">${actionBtn}</div>
       </div>`;
       return;
     }
@@ -577,8 +583,9 @@ function showInfoCard(modal) {
       <div class="price-row"><span>Valor</span><span class="val">${usd.format(card.cost)}</span></div>
       <div class="price-row"><span>Anticipo</span><span class="val">${usd.format(card.down)}</span></div>
       <div class="price-row"><span>Flujo mensual</span><span class="val" style="color:var(--green)">+${usd.format(card.cashFlow)}</span></div>
+      ${card.resale ? `<div class="price-row"><span>Precio reventa</span><span class="val">${usd.format(card.resale[0])}–${usd.format(card.resale[1])}</span></div>` : ""}
       <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente para el anticipo.</div>
-      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+      <div class="modal-actions">${actionBtn}</div>
     </div>`;
     return;
   }
@@ -589,8 +596,9 @@ function showInfoCard(modal) {
       <div class="card-type">🛍️ Baratija</div>
       <div class="card-name">${card.name}</div>
       <div class="price-row"><span>Precio</span><span class="val">${usd.format(card.cost)}</span></div>
+      ${card.expense ? `<div class="price-row"><span>Gasto mensual</span><span class="val neg">-${usd.format(card.expense)}</span></div>` : ""}
       <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente.</div>
-      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+      <div class="modal-actions">${actionBtn}</div>
     </div>`;
     return;
   }
@@ -602,7 +610,7 @@ function showInfoCard(modal) {
       <div class="card-name">${card.title}</div>
       <div class="card-text">${card.text}</div>
       <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo para aprovechar la oferta.</div>
-      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+      <div class="modal-actions">${actionBtn}</div>
     </div>`;
     return;
   }

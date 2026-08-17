@@ -210,7 +210,9 @@ async def test_frontend_renders_and_plays(server_url, browser):
       const pass = btns.find(b => /Pasar|No |Ignorar|resististe/i.test(b.textContent));
       const buy = btns.find(b => /Comprar/i.test(b.textContent));
       const dona = btns.find(b => /Donar/i.test(b.textContent));
+      const seguir = btns.find(b => /Seguir|Cerrar/i.test(b.textContent));
       if (dona) { dona.click(); return 'donar'; }
+      if (seguir) { seguir.click(); return 'seguir'; }
       if (pass) { pass.click(); return 'pass'; }
       if (buy) { buy.click(); return 'buy'; }
       return 'other';

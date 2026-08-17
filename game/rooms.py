@@ -114,7 +114,7 @@ class Room:
         elif t == "start":
             if pid == self.host and self.game.phase == "lobby" and len(self.players) >= 2:
                 self.game.start_selection()
-        elif t in ("roll", "choice"):
+        elif t in ("roll", "choice", "continue"):
             if self.game.phase in ("playing", "over"):
                 self.game._push_msg(pid, msg)
                 self._input_event.set()

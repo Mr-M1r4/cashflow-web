@@ -33,7 +33,7 @@ def server():
         stderr=subprocess.DEVNULL,
     )
     url = f"ws://127.0.0.1:{port}/ws"
-    for _ in range(50):
+    for _ in range(80):
         try:
             with socket.create_connection(("127.0.0.1", port), timeout=0.3):
                 break
@@ -211,6 +211,9 @@ class Bot(Client):
             pend = st["pending"]
             if pend["kind"] == "roll":
                 await self.send({"type": "roll"})
+                continue
+            if pend["kind"] == "continue":
+                await self.send({"type": "continue"})
                 continue
             lc = st.get("lastCard") or {}
             deck = lc.get("deck")
