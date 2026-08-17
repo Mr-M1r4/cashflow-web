@@ -35,12 +35,12 @@ class Room:
 
     # ------------------------------------------------------------- connections
 
-    def add_player(self, ws, name, icon="", color="", photo=""):
+    def add_player(self, ws, name):
         pid = uuid.uuid4().hex[:8]
-        self.players[pid] = {"name": name, "ws": ws, "connected": True, "icon": icon, "color": color}
+        self.players[pid] = {"name": name, "ws": ws, "connected": True}
         if self.host is None:
             self.host = pid
-        self.game.add_player(pid, name, icon, color, photo)
+        self.game.add_player(pid, name)
         self._send_locks[ws] = asyncio.Lock()
         return pid
 

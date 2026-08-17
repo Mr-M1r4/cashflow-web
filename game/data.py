@@ -4,6 +4,8 @@ PROFESSIONS = [
     {
         "id": "janitor",
         "name": "Conserje",
+        "icon": "🧹",
+        "color": "#a0522d",
         "salary": 1600,
         "savings": 620,
         "expenses": {"taxes": 300, "mortgage": 400, "schoolLoan": 0, "carLoan": 100, "creditCards": 60, "retail": 50, "other": 110, "children": 0},
@@ -12,6 +14,8 @@ PROFESSIONS = [
     {
         "id": "truck_driver",
         "name": "Camionero",
+        "icon": "🚛",
+        "color": "#e67e22",
         "salary": 2500,
         "savings": 1000,
         "expenses": {"taxes": 470, "mortgage": 600, "schoolLoan": 50, "carLoan": 200, "creditCards": 70, "retail": 100, "other": 160, "children": 0},
@@ -20,6 +24,8 @@ PROFESSIONS = [
     {
         "id": "security",
         "name": "Guardia de seguridad",
+        "icon": "🔒",
+        "color": "#7f8c8d",
         "salary": 3000,
         "savings": 870,
         "expenses": {"taxes": 560, "mortgage": 700, "schoolLoan": 0, "carLoan": 200, "creditCards": 90, "retail": 130, "other": 160, "children": 0},
@@ -28,6 +34,8 @@ PROFESSIONS = [
     {
         "id": "teacher",
         "name": "Profesora",
+        "icon": "👩‍🏫",
+        "color": "#4aa8ff",
         "salary": 3500,
         "savings": 400,
         "expenses": {"taxes": 650, "mortgage": 800, "schoolLoan": 0, "carLoan": 250, "creditCards": 110, "retail": 150, "other": 200, "children": 0},
@@ -36,6 +44,8 @@ PROFESSIONS = [
     {
         "id": "nurse",
         "name": "Enfermera",
+        "icon": "👩‍⚕️",
+        "color": "#2ecc71",
         "salary": 4400,
         "savings": 750,
         "expenses": {"taxes": 820, "mortgage": 1000, "schoolLoan": 0, "carLoan": 300, "creditCards": 130, "retail": 200, "other": 300, "children": 0},
@@ -44,6 +54,8 @@ PROFESSIONS = [
     {
         "id": "police",
         "name": "Policía",
+        "icon": "🚔",
+        "color": "#3498db",
         "salary": 5000,
         "savings": 800,
         "expenses": {"taxes": 940, "mortgage": 1150, "schoolLoan": 0, "carLoan": 350, "creditCards": 140, "retail": 230, "other": 340, "children": 0},
@@ -52,6 +64,8 @@ PROFESSIONS = [
     {
         "id": "programmer",
         "name": "Programador",
+        "icon": "👨‍💻",
+        "color": "#9b59b6",
         "salary": 6000,
         "savings": 1500,
         "expenses": {"taxes": 1120, "mortgage": 1450, "schoolLoan": 600, "carLoan": 400, "creditCards": 170, "retail": 270, "other": 350, "children": 0},
@@ -60,6 +74,8 @@ PROFESSIONS = [
     {
         "id": "pilot",
         "name": "Piloto",
+        "icon": "✈️",
+        "color": "#1abc9c",
         "salary": 8500,
         "savings": 1600,
         "expenses": {"taxes": 1600, "mortgage": 2000, "schoolLoan": 0, "carLoan": 550, "creditCards": 210, "retail": 350, "other": 490, "children": 0},
@@ -68,6 +84,8 @@ PROFESSIONS = [
     {
         "id": "engineer",
         "name": "Ingeniero",
+        "icon": "👷",
+        "color": "#f39c12",
         "salary": 7200,
         "savings": 1100,
         "expenses": {"taxes": 1360, "mortgage": 1750, "schoolLoan": 0, "carLoan": 500, "creditCards": 180, "retail": 300, "other": 450, "children": 0},
@@ -76,6 +94,8 @@ PROFESSIONS = [
     {
         "id": "manager",
         "name": "Gerente",
+        "icon": "💼",
+        "color": "#e74c3c",
         "salary": 9000,
         "savings": 2000,
         "expenses": {"taxes": 1740, "mortgage": 2200, "schoolLoan": 0, "carLoan": 600, "creditCards": 220, "retail": 380, "other": 520, "children": 0},
@@ -84,6 +104,8 @@ PROFESSIONS = [
     {
         "id": "lawyer",
         "name": "Abogada",
+        "icon": "⚖️",
+        "color": "#8e44ad",
         "salary": 13000,
         "savings": 2300,
         "expenses": {"taxes": 2540, "mortgage": 3200, "schoolLoan": 0, "carLoan": 900, "creditCards": 300, "retail": 500, "other": 650, "children": 0},
@@ -92,6 +114,8 @@ PROFESSIONS = [
     {
         "id": "doctor",
         "name": "Médico",
+        "icon": "🩺",
+        "color": "#c0392b",
         "salary": 16500,
         "savings": 2500,
         "expenses": {"taxes": 3250, "mortgage": 4100, "schoolLoan": 0, "carLoan": 1000, "creditCards": 400, "retail": 700, "other": 800, "children": 0},

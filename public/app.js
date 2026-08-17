@@ -1,73 +1,5 @@
 /* Cashflow Online — cliente */
 
-const COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22"];
-
-const CHARACTERS = [
-  { id: "emprendedor", name: "Emprendedor", icon: "👨‍💼", color: "#e74c3c" },
-  { id: "programadora", name: "Programadora", icon: "👩‍💻", color: "#3498db" },
-  { id: "chef", name: "Chef", icon: "👨‍🍳", color: "#e67e22" },
-  { id: "doctora", name: "Doctora", icon: "👩‍⚕️", color: "#2ecc71" },
-  { id: "artista", name: "Artista", icon: "👨‍🎨", color: "#9b59b6" },
-  { id: "cientifica", name: "Científica", icon: "👩‍🔬", color: "#f1c40f" },
-  { id: "bombero", name: "Bombero", icon: "👨‍🚒", color: "#ff5d5d" },
-  { id: "profesora", name: "Profesora", icon: "👩‍🏫", color: "#4aa8ff" },
-];
-
-let selectedChar = CHARACTERS[0];
-
-function initCharPicker() {
-  const picker = $("char-picker");
-  if (!picker || picker.children.length > 0) return;
-  picker.innerHTML = "";
-  CHARACTERS.forEach((ch) => {
-    const opt = document.createElement("div");
-    opt.className = "char-opt" + (ch.id === selectedChar.id ? " selected" : "");
-    opt.dataset.charId = ch.id;
-    opt.innerHTML = `<span class="char-icon">${ch.icon}</span><span class="char-name">${ch.name}</span>`;
-    opt.addEventListener("click", () => {
-      selectedChar = ch;
-      picker.querySelectorAll(".char-opt").forEach((o) => o.classList.toggle("selected", o.dataset.charId === ch.id));
-    });
-    picker.appendChild(opt);
-  });
-}
-initCharPicker();
-
-let selectedPhoto = null;
-
-function initPhotoUpload() {
-  const upload = $("photo-upload");
-  const input = $("photo-input");
-  if (!upload || !input) return;
-  upload.addEventListener("click", () => input.click());
-  input.addEventListener("change", () => {
-    const file = input.files && input.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { lobbyMsg("La foto es muy grande (máx 5MB).", true); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const size = 96;
-        const canvas = document.createElement("canvas");
-        canvas.width = size; canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        const ratio = Math.min(size / img.width, size / img.height);
-        const w = img.width * ratio, h = img.height * ratio;
-        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        selectedPhoto = canvas.toDataURL("image/jpeg", 0.85);
-        $("photo-preview").src = selectedPhoto;
-        $("photo-preview").classList.remove("hidden");
-        upload.querySelector(".photo-placeholder").classList.add("hidden");
-        upload.classList.add("has-photo");
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-initPhotoUpload();
-
 let ws = null;
 let yourId = null;
 let roomId = null;
@@ -267,25 +199,14 @@ function positionToken(p, idxOnCell) {
   t.style.left = (px.x + off * 3) + "px";
   t.style.top = (px.y - off * 6) + "px";
   const dot = t.querySelector(".tdot");
-  dot.style.background = p.color || COLORS[playerIndex(p.id)];
-  if (p.photo) {
-    dot.style.backgroundImage = `url(${p.photo})`;
-    dot.style.backgroundSize = "cover";
-    dot.style.backgroundPosition = "center";
-    dot.textContent = "";
-  } else {
-    dot.style.backgroundImage = "none";
-    dot.textContent = p.icon || p.name[0].toUpperCase();
-  }
+  dot.style.background = p.color || "";
+  dot.style.backgroundImage = "none";
+  dot.textContent = p.icon || p.name[0].toUpperCase();
   t.querySelector(".tname").textContent = p.name;
   t.classList.toggle("me", p.id === yourId);
   const cur = state.phase === "playing" && state.players[state.turnIndex];
   t.classList.toggle("active", !!(cur && cur.id === p.id));
   return t;
-}
-
-function playerIndex(pid) {
-  return state.players.findIndex((p) => p.id === pid);
 }
 
 function renderTokens() {
@@ -322,7 +243,7 @@ function renderPlayers() {
     const f = fin(p);
     const card = document.createElement("div");
     card.className = "player-card";
-    card.style.setProperty("--pc", p.color || COLORS[playerIndex(p.id)]);
+    card.style.setProperty("--pc", p.color || "");
     const cur = state.players[state.turnIndex];
     if (state.phase === "playing" && cur && cur.id === p.id) card.classList.add("turn");
     if (p.won) card.classList.add("winner");
@@ -331,7 +252,7 @@ function renderPlayers() {
     const pct = p.inFastTrack ? 100 : Math.max(0, escPct);
     card.innerHTML = `
       <div class="pc-top">
-        <span class="pc-dot${p.photo ? " has-photo" : ""}" style="${p.photo ? `background-image:url(${p.photo});background-size:cover;background-position:center` : ""}">${p.photo ? "" : (p.icon || "")}</span>
+        <span class="pc-dot">${p.icon || ""}</span>
         <span class="pc-name">${p.name} ${p.id === yourId ? "(vos)" : ""}</span>
         <span class="badge ${p.inFastTrack ? "ft" : ""}">${p.inFastTrack ? "🚀 Pista rápida" : "🐀 Ratas"}${p.downsizedTurns > 0 ? " · 💼" : ""}</span>
       </div>
@@ -501,7 +422,7 @@ function showLandingBanner(move) {
     <div class="lb-body">
       <div class="lb-name">${name}</div>
       <div class="lb-text">${info.text}</div>
-      <div class="lb-player" style="--c:${player ? COLORS[playerIndex(player.id)] : "#fff"}">${player ? player.name : ""}</div>
+      <div class="lb-player" style="--c:${player ? player.color : "#fff"}">${player ? player.name : ""}</div>
     </div>`;
   banner.style.borderColor = state.boardMeta[(move.fast ? "fast" : "rat") + "Colors"][type];
   banner.classList.remove("pop");
@@ -601,14 +522,18 @@ function showSelection(modal) {
   const taken = state.players.filter((p) => p.profession).map((p) => p.profession.id);
   const mine = me() && me().profession;
   if (mine) {
-    modal.innerHTML = `<div class="modal-box waiting">Elegiste <b>${mine.name}</b>. Esperando a los demás…</div>`;
+    modal.innerHTML = `<div class="modal-box waiting">${mine.icon || ""} Elegiste <b>${mine.name}</b>. Esperando a los demás…</div>`;
     return;
   }
   modal.innerHTML = `<div class="modal-box"><h2>Elegí tu profesión</h2>
     <div class="prof-list">
       ${state.availableProfessions.map((p) => `
-        <div class="prof-item ${taken.includes(p.id) ? "taken" : ""}" onclick="${taken.includes(p.id) ? "" : `chooseProf('${p.id}')`}">
-          <b>${p.name}</b>
+        <div class="prof-item ${taken.includes(p.id) ? "taken" : ""}" onclick="${taken.includes(p.id) ? "" : `chooseProf('${p.id}')`}"
+             style="${taken.includes(p.id) ? "" : `border-left: 4px solid ${p.color}`}">
+          <div class="prof-header">
+            <span class="prof-icon">${p.icon || ""}</span>
+            <b>${p.name}</b>
+          </div>
           <span>Salario ${usd.format(p.salary)} · Gastos ${usd.format(Object.values(p.expenses).reduce((a, x) => a + x, 0))}</span>
           <span>Ahorros ${usd.format(p.savings)}</span>
         </div>`).join("")}
@@ -848,7 +773,7 @@ $("btn-create").onclick = () => {
   if (!name) { lobbyMsg("Escribí tu nombre.", true); $("lobby-name").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  ws.onopen = () => send({ type: "join", name, roomId: "", icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id, photo: selectedPhoto });
+  ws.onopen = () => send({ type: "join", name, roomId: "" });
   $("lobby-name").disabled = true;
 };
 
@@ -859,7 +784,7 @@ $("btn-join").onclick = () => {
   if (!room) { lobbyMsg("Ingresá el código de sala.", true); $("lobby-room").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  ws.onopen = () => send({ type: "join", name, roomId: room, icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id, photo: selectedPhoto });
+  ws.onopen = () => send({ type: "join", name, roomId: room });
   $("lobby-name").disabled = true;
 };
 

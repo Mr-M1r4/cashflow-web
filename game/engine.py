@@ -98,13 +98,12 @@ class Game:
 
     # ------------------------------------------------------------------ setup
 
-    def add_player(self, pid, name, icon="", color="", photo=""):
+    def add_player(self, pid, name):
         p = {
             "id": pid,
             "name": name,
-            "icon": icon,
-            "color": color,
-            "photo": photo,
+            "icon": "",
+            "color": "",
             "profession": None,
             "cash": 0,
             "stocks": [],
@@ -145,6 +144,8 @@ class Game:
             return False
         prof = data.PROFESSIONS_BY_ID[prof_id]
         p["profession"] = prof
+        p["icon"] = prof.get("icon", "")
+        p["color"] = prof.get("color", "")
         p["cash"] = prof["savings"]
         p["expenses"] = dict(prof["expenses"])
         p["liabilities"] = dict(prof["liabilities"])
