@@ -310,7 +310,6 @@ class Game:
         if card["kind"] == "stock":
             max_shares = int(p["cash"] // card["price"])
             self.last_card["maxShares"] = max_shares
-            self.room.broadcast_state()
             if max_shares <= 0:
                 self._log(f"📊 {p['name']} no tiene efectivo para comprar {card['name']}.")
                 return
@@ -337,7 +336,6 @@ class Game:
         else:
             afford = p["cash"] >= card["down"]
             self.last_card["afford"] = afford
-            self.room.broadcast_state()
             if not afford:
                 self._log(f"{p['name']} no puede pagar el anticipo de {fmt(card['down'])} para {card['name']}.")
                 return
@@ -363,7 +361,6 @@ class Game:
     async def handle_doodad(self, p, card):
         afford = p["cash"] >= card["cost"]
         self.last_card = {"deck": "doodad", "card": card, "afford": afford}
-        self.room.broadcast_state()
         if not afford:
             self._log(f"{p['name']} no puede pagar {card['name']} ({fmt(card['cost'])}).")
             return
@@ -383,7 +380,6 @@ class Game:
             return
         cost = int(salary * 0.1)
         self.last_card = {"deck": "charity", "amount": cost}
-        self.room.broadcast_state()
         msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"pay": False}})
         if msg["value"].get("pay") and p["cash"] >= cost:
             p["cash"] -= cost
@@ -399,7 +395,6 @@ class Game:
                 self._log(f"{p['name']} no tiene efectivo para aprovechar la oferta de {card['symbol']}.")
                 return
             self.last_card = {"deck": "market", "card": card, "maxShares": max_shares}
-            self.room.broadcast_state()
             msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"shares": 0}})
             shares = int(msg["value"].get("shares", 0) or 0)
             if shares > 0:
@@ -447,7 +442,6 @@ class Game:
 
     async def ask_sell_real_estate(self, p, card, assets):
         self.last_card = {"deck": "marketSell", "card": card, "assets": assets, "kind": "realEstate"}
-        self.room.broadcast_state()
         msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"pass": True}})
         val = msg["value"]
         if val.get("pass"):
@@ -465,7 +459,6 @@ class Game:
 
     async def ask_sell_business(self, p, card, assets):
         self.last_card = {"deck": "marketSell", "card": card, "assets": assets, "kind": "business"}
-        self.room.broadcast_state()
         msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"pass": True}})
         val = msg["value"]
         if val.get("pass"):
@@ -486,7 +479,6 @@ class Game:
         total_shares = sum(s["shares"] for s in lots)
         lo, hi = card["priceRange"]
         self.last_card = {"deck": "marketSell", "card": card, "symbol": card["symbol"], "shares": total_shares, "priceRange": [lo, hi], "kind": "stock"}
-        self.room.broadcast_state()
         msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"pass": True}})
         val = msg["value"]
         if val.get("pass"):

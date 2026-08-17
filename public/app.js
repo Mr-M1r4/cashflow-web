@@ -569,23 +569,31 @@ function renderTurnPill() {
 
 /* ================= Modales ================= */
 
+let _infoShown = null;
+
 function renderModal() {
   const modal = $("modal");
-  if (state.phase === "lobby") { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+  if (state.phase === "lobby") { modal.classList.add("hidden"); modal.innerHTML = ""; _infoShown = null; return; }
 
-  if (state.phase === "selecting") { showSelection(modal); return; }
-  if (state.phase === "over") { showWin(modal); return; }
+  if (state.phase === "selecting") { showSelection(modal); _infoShown = null; return; }
+  if (state.phase === "over") { showWin(modal); _infoShown = null; return; }
 
   const pending = state.pending;
-  if (!pending) { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
-
-  if (pending.playerId === yourId) {
+  if (pending && pending.playerId === yourId) {
+    _infoShown = null;
     if (pending.kind === "roll") { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
     showChoice(modal);
-  } else {
-    modal.classList.add("hidden");
-    modal.innerHTML = "";
+    return;
   }
+
+  if (!pending && state.lastCard && state.lastCard !== _infoShown) {
+    _infoShown = state.lastCard;
+    showInfoCard(modal);
+    return;
+  }
+
+  modal.classList.add("hidden");
+  modal.innerHTML = "";
 }
 
 function showSelection(modal) {
@@ -614,6 +622,51 @@ function showWin(modal) {
     <h1>🏆</h1><h1>¡${winner.name} GANA!</h1>
     <p>${winner.name} escapó de la carrera de ratas y compró su sueño: <b>${winner.dream.name}</b>.</p>
   </div>`;
+}
+
+function showInfoCard(modal) {
+  const lc = state.lastCard;
+  if (!lc) { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+  modal.classList.remove("hidden");
+
+  if (lc.deck === "small" || lc.deck === "big") {
+    const card = lc.card;
+    if (card.kind === "stock") {
+      modal.innerHTML = `<div class="modal-box">
+        <div class="card-type">📗 Oportunidad · Acciones</div>
+        <div class="card-name">${card.name}</div>
+        <div class="card-text">Precio: <b>${usd.format(card.price)}</b> por acción.</div>
+        <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo para comprar acciones.</div>
+        <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+      </div>`;
+      return;
+    }
+    const kind = card.kind === "realEstate" ? "🏠 Inmueble" : "🏢 Negocio";
+    modal.innerHTML = `<div class="modal-box">
+      <div class="card-type">${lc.deck === "small" ? "📗 Oportunidad menor" : "📘 Oportunidad mayor"} · ${kind}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="price-row"><span>Valor</span><span class="val">${usd.format(card.cost)}</span></div>
+      <div class="price-row"><span>Anticipo</span><span class="val">${usd.format(card.down)}</span></div>
+      <div class="price-row"><span>Flujo mensual</span><span class="val" style="color:var(--green)">+${usd.format(card.cashFlow)}</span></div>
+      <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente para el anticipo.</div>
+      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+    </div>`;
+    return;
+  }
+
+  if (lc.deck === "doodad") {
+    const card = lc.card;
+    modal.innerHTML = `<div class="modal-box">
+      <div class="card-type">🛍️ Baratija</div>
+      <div class="card-name">${card.name}</div>
+      <div class="price-row"><span>Precio</span><span class="val">${usd.format(card.cost)}</span></div>
+      <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente.</div>
+      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+    </div>`;
+    return;
+  }
+
+  modal.classList.add("hidden");
 }
 
 function showChoice(modal) {
@@ -647,10 +700,9 @@ function showChoice(modal) {
       <div class="price-row"><span>Anticipo</span><span class="val">${usd.format(card.down)}</span></div>
       <div class="price-row"><span>Flujo mensual</span><span class="val" style="color:var(--green)">+${usd.format(card.cashFlow)}</span></div>
       ${card.resale ? `<div class="price-row"><span>Precio reventa</span><span class="val">${usd.format(card.resale[0])}–${usd.format(card.resale[1])}</span></div>` : ""}
-      ${afford ? "" : `<div class="hint" style="color:var(--red)">⚠️ No te alcanza el efectivo para el anticipo.</div>`}
       <div class="modal-actions">
         <button onclick="send({type:'choice',value:{buy:false}})">Pasar</button>
-        ${afford ? `<button class="primary" onclick="send({type:'choice',value:{buy:true}})">Comprar</button>` : ""}
+        ${afford ? `<button class="primary" onclick="send({type:'choice',value:{buy:true}})">Comprar</button>` : `<button disabled>Comprar</button>`}
       </div>
     </div>`;
     return;
@@ -664,10 +716,9 @@ function showChoice(modal) {
       <div class="card-name">${card.name}</div>
       <div class="price-row"><span>Precio</span><span class="val">${usd.format(card.cost)}</span></div>
       ${card.expense ? `<div class="price-row"><span>Gasto mensual</span><span class="val neg">-${usd.format(card.expense)}</span></div>` : ""}
-      ${afford ? "" : `<div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente.</div>`}
       <div class="modal-actions">
         <button onclick="send({type:'choice',value:{buy:false}})">No comprar</button>
-        ${afford ? `<button class="primary" onclick="send({type:'choice',value:{buy:true}})">Comprar</button>` : ""}
+        ${afford ? `<button class="primary" onclick="send({type:'choice',value:{buy:true}})">Comprar</button>` : `<button disabled>Comprar</button>`}
       </div>
     </div>`;
     return;
