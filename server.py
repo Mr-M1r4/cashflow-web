@@ -34,6 +34,7 @@ async def ws_endpoint(ws: WebSocket):
                 name = (msg.get("name") or "Jugador").strip()[:20] or "Jugador"
                 icon = (msg.get("icon") or "")[:4] or ""
                 color = (msg.get("color") or "").strip()[:20] or ""
+                photo = (msg.get("photo") or "")[:140000] or ""  # base64 data URL, cap at ~100KB
                 room_id = (msg.get("roomId") or "").strip()
                 room = manager.get(room_id) if room_id else None
                 if room_id and room is None:
@@ -44,7 +45,7 @@ async def ws_endpoint(ws: WebSocket):
                     continue
                 if room is None:
                     room = manager.create_room()
-                pid = room.add_player(ws, name, icon, color)
+                pid = room.add_player(ws, name, icon, color, photo)
                 await ws.send_text(json.dumps({
                     "type": "joined",
                     "yourId": pid,

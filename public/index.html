@@ -49,7 +49,14 @@
 
     <div class="char-section">
       <div class="char-label">Elegí tu personaje</div>
-      <div id="char-picker" class="char-picker"></div>
+      <div class="char-row">
+        <div class="photo-upload" id="photo-upload" title="Subir foto de perfil">
+          <span class="photo-placeholder">📷</span>
+          <img id="photo-preview" class="photo-preview hidden" alt="">
+          <input id="photo-input" type="file" accept="image/*" hidden>
+        </div>
+        <div id="char-picker" class="char-picker"></div>
+      </div>
     </div>
 
     <div class="lobby-actions">

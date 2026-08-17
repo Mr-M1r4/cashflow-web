@@ -33,6 +33,41 @@ function initCharPicker() {
 }
 initCharPicker();
 
+let selectedPhoto = null;
+
+function initPhotoUpload() {
+  const upload = $("photo-upload");
+  const input = $("photo-input");
+  if (!upload || !input) return;
+  upload.addEventListener("click", () => input.click());
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { lobbyMsg("La foto es muy grande (máx 5MB).", true); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const size = 96;
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const ratio = Math.min(size / img.width, size / img.height);
+        const w = img.width * ratio, h = img.height * ratio;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        selectedPhoto = canvas.toDataURL("image/jpeg", 0.85);
+        $("photo-preview").src = selectedPhoto;
+        $("photo-preview").classList.remove("hidden");
+        upload.querySelector(".photo-placeholder").classList.add("hidden");
+        upload.classList.add("has-photo");
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+initPhotoUpload();
+
 let ws = null;
 let yourId = null;
 let roomId = null;
@@ -233,7 +268,15 @@ function positionToken(p, idxOnCell) {
   t.style.top = (px.y - off * 6) + "px";
   const dot = t.querySelector(".tdot");
   dot.style.background = p.color || COLORS[playerIndex(p.id)];
-  dot.textContent = p.icon || p.name[0].toUpperCase();
+  if (p.photo) {
+    dot.style.backgroundImage = `url(${p.photo})`;
+    dot.style.backgroundSize = "cover";
+    dot.style.backgroundPosition = "center";
+    dot.textContent = "";
+  } else {
+    dot.style.backgroundImage = "none";
+    dot.textContent = p.icon || p.name[0].toUpperCase();
+  }
   t.querySelector(".tname").textContent = p.name;
   t.classList.toggle("me", p.id === yourId);
   const cur = state.phase === "playing" && state.players[state.turnIndex];
@@ -288,7 +331,7 @@ function renderPlayers() {
     const pct = p.inFastTrack ? 100 : Math.max(0, escPct);
     card.innerHTML = `
       <div class="pc-top">
-        <span class="pc-dot">${p.icon || ""}</span>
+        <span class="pc-dot${p.photo ? " has-photo" : ""}" style="${p.photo ? `background-image:url(${p.photo});background-size:cover;background-position:center` : ""}">${p.photo ? "" : (p.icon || "")}</span>
         <span class="pc-name">${p.name} ${p.id === yourId ? "(vos)" : ""}</span>
         <span class="badge ${p.inFastTrack ? "ft" : ""}">${p.inFastTrack ? "🚀 Pista rápida" : "🐀 Ratas"}${p.downsizedTurns > 0 ? " · 💼" : ""}</span>
       </div>
@@ -754,7 +797,7 @@ $("btn-create").onclick = () => {
   if (!name) { lobbyMsg("Escribí tu nombre.", true); $("lobby-name").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  ws.onopen = () => send({ type: "join", name, roomId: "", icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id });
+  ws.onopen = () => send({ type: "join", name, roomId: "", icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id, photo: selectedPhoto });
   $("lobby-name").disabled = true;
 };
 
@@ -765,7 +808,7 @@ $("btn-join").onclick = () => {
   if (!room) { lobbyMsg("Ingresá el código de sala.", true); $("lobby-room").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  ws.onopen = () => send({ type: "join", name, roomId: room, icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id });
+  ws.onopen = () => send({ type: "join", name, roomId: room, icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id, photo: selectedPhoto });
   $("lobby-name").disabled = true;
 };
 
