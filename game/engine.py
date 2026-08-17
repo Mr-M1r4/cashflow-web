@@ -98,10 +98,12 @@ class Game:
 
     # ------------------------------------------------------------------ setup
 
-    def add_player(self, pid, name):
+    def add_player(self, pid, name, icon="", color=""):
         p = {
             "id": pid,
             "name": name,
+            "icon": icon,
+            "color": color,
             "profession": None,
             "cash": 0,
             "stocks": [],

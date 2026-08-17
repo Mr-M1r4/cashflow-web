@@ -32,6 +32,8 @@ async def ws_endpoint(ws: WebSocket):
                 continue  # ignore malformed frames
             if msg.get("type") == "join":
                 name = (msg.get("name") or "Jugador").strip()[:20] or "Jugador"
+                icon = (msg.get("icon") or "")[:4] or ""
+                color = (msg.get("color") or "").strip()[:20] or ""
                 room_id = (msg.get("roomId") or "").strip()
                 room = manager.get(room_id) if room_id else None
                 if room_id and room is None:
@@ -42,7 +44,7 @@ async def ws_endpoint(ws: WebSocket):
                     continue
                 if room is None:
                     room = manager.create_room()
-                pid = room.add_player(ws, name)
+                pid = room.add_player(ws, name, icon, color)
                 await ws.send_text(json.dumps({
                     "type": "joined",
                     "yourId": pid,

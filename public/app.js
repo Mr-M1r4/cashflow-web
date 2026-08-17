@@ -2,6 +2,37 @@
 
 const COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22"];
 
+const CHARACTERS = [
+  { id: "emprendedor", name: "Emprendedor", icon: "👨‍💼", color: "#e74c3c" },
+  { id: "programadora", name: "Programadora", icon: "👩‍💻", color: "#3498db" },
+  { id: "chef", name: "Chef", icon: "👨‍🍳", color: "#e67e22" },
+  { id: "doctora", name: "Doctora", icon: "👩‍⚕️", color: "#2ecc71" },
+  { id: "artista", name: "Artista", icon: "👨‍🎨", color: "#9b59b6" },
+  { id: "cientifica", name: "Científica", icon: "👩‍🔬", color: "#f1c40f" },
+  { id: "bombero", name: "Bombero", icon: "👨‍🚒", color: "#ff5d5d" },
+  { id: "profesora", name: "Profesora", icon: "👩‍🏫", color: "#4aa8ff" },
+];
+
+let selectedChar = CHARACTERS[0];
+
+function initCharPicker() {
+  const picker = $("char-picker");
+  if (!picker || picker.children.length > 0) return;
+  picker.innerHTML = "";
+  CHARACTERS.forEach((ch) => {
+    const opt = document.createElement("div");
+    opt.className = "char-opt" + (ch.id === selectedChar.id ? " selected" : "");
+    opt.dataset.charId = ch.id;
+    opt.innerHTML = `<span class="char-icon">${ch.icon}</span><span class="char-name">${ch.name}</span>`;
+    opt.addEventListener("click", () => {
+      selectedChar = ch;
+      picker.querySelectorAll(".char-opt").forEach((o) => o.classList.toggle("selected", o.dataset.charId === ch.id));
+    });
+    picker.appendChild(opt);
+  });
+}
+initCharPicker();
+
 let ws = null;
 let yourId = null;
 let roomId = null;
@@ -201,8 +232,8 @@ function positionToken(p, idxOnCell) {
   t.style.left = (px.x + off * 3) + "px";
   t.style.top = (px.y - off * 6) + "px";
   const dot = t.querySelector(".tdot");
-  dot.style.background = COLORS[playerIndex(p.id)];
-  dot.textContent = p.name[0].toUpperCase();
+  dot.style.background = p.color || COLORS[playerIndex(p.id)];
+  dot.textContent = p.icon || p.name[0].toUpperCase();
   t.querySelector(".tname").textContent = p.name;
   t.classList.toggle("me", p.id === yourId);
   const cur = state.phase === "playing" && state.players[state.turnIndex];
@@ -248,7 +279,7 @@ function renderPlayers() {
     const f = fin(p);
     const card = document.createElement("div");
     card.className = "player-card";
-    card.style.setProperty("--pc", COLORS[playerIndex(p.id)]);
+    card.style.setProperty("--pc", p.color || COLORS[playerIndex(p.id)]);
     const cur = state.players[state.turnIndex];
     if (state.phase === "playing" && cur && cur.id === p.id) card.classList.add("turn");
     if (p.won) card.classList.add("winner");
@@ -257,7 +288,7 @@ function renderPlayers() {
     const pct = p.inFastTrack ? 100 : Math.max(0, escPct);
     card.innerHTML = `
       <div class="pc-top">
-        <span class="pc-dot"></span>
+        <span class="pc-dot">${p.icon || ""}</span>
         <span class="pc-name">${p.name} ${p.id === yourId ? "(vos)" : ""}</span>
         <span class="badge ${p.inFastTrack ? "ft" : ""}">${p.inFastTrack ? "🚀 Pista rápida" : "🐀 Ratas"}${p.downsizedTurns > 0 ? " · 💼" : ""}</span>
       </div>
@@ -723,8 +754,7 @@ $("btn-create").onclick = () => {
   if (!name) { lobbyMsg("Escribí tu nombre.", true); $("lobby-name").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  // esperamos conexión abierta
-  ws.onopen = () => send({ type: "join", name, roomId: "" });
+  ws.onopen = () => send({ type: "join", name, roomId: "", icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id });
   $("lobby-name").disabled = true;
 };
 
@@ -735,7 +765,7 @@ $("btn-join").onclick = () => {
   if (!room) { lobbyMsg("Ingresá el código de sala.", true); $("lobby-room").focus(); return; }
   lobbyMsg("Conectando…", false);
   connect();
-  ws.onopen = () => send({ type: "join", name, roomId: room });
+  ws.onopen = () => send({ type: "join", name, roomId: room, icon: selectedChar.icon, color: selectedChar.color, charId: selectedChar.id });
   $("lobby-name").disabled = true;
 };
 
