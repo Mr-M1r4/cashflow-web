@@ -188,8 +188,10 @@ async def test_frontend_renders_and_plays(server_url, browser):
     # --- playing
     await cdp.wait_js("document.getElementById('turn-info').textContent.startsWith('Turno de')")
 
-    # --- board fully rendered: 24 + 12 cells and 2 tokens
-    assert await cdp.eval("document.querySelectorAll('#board .cell').length") == 36
+    # --- board fully rendered: 2 wheel rings + 36 labels + center + 2 tokens
+    assert await cdp.eval("document.querySelectorAll('#board .wheel-ring').length") == 2
+    assert await cdp.eval("document.querySelectorAll('#board .wheel-label').length") == 36
+    assert await cdp.eval("!!document.querySelector('#board .wheel-center')")
     assert await cdp.eval("document.querySelectorAll('#board .token').length") == 2
     assert await cdp.eval("!!document.querySelector('.player-card')")
     cash = await cdp.eval("document.querySelector('.player-card .statement .value').textContent")

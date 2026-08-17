@@ -100,66 +100,81 @@ let cellsBuilt = false;
 function boardPos(n, i, radius) {
   const el = $("board");
   const W = el.clientWidth, H = el.clientHeight;
-  const cx = W * 0.5, cy = H * 0.47;
+  const cx = W * 0.5, cy = H * 0.5;
   const R = radius * Math.min(W, H) * 0.5;
   const ang = -Math.PI / 2 + (i * 2 * Math.PI) / n;
   return { x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang) };
-}
-
-function cellLabel(type, labels) {
-  return (labels[type] || type).replace(/\n/g, "<br>");
 }
 
 function cellIcon(type) {
   const map = {
     PAYDAY: "💵", SMALL: "📗", BIG: "📘", MARKET: "📈", DOODAD: "🛍️",
     CHARITY: "🤝", BABY: "👶", DOWNSIZE: "💼", CASHFLOW: "💰", OPPORTUNITY: "💡",
-    DREAM: "🌟", 
+    DREAM: "🌟",
   };
   return map[type] || "•";
+}
+
+function conicGradient(board, colors) {
+  const n = board.length, seg = 360 / n;
+  const stops = board.map((t, i) => `${colors[t]} ${(i * seg).toFixed(2)}deg ${((i + 1) * seg).toFixed(2)}deg`);
+  return `conic-gradient(from -90deg, ${stops.join(", ")})`;
 }
 
 function buildBoardIfNeeded() {
   if (cellsBuilt) return;
   cellsBuilt = true;
   const board = $("board");
+
+  const rw = document.createElement("div");
+  rw.className = "wheel-ring rat";
+  rw.style.background = conicGradient(state.ratBoard, state.boardMeta.ratColors);
+  board.appendChild(rw);
+
+  const fw = document.createElement("div");
+  fw.className = "wheel-ring fast";
+  fw.style.background = conicGradient(state.fastBoard, state.boardMeta.fastColors);
+  board.appendChild(fw);
+
   state.ratBoard.forEach((t, i) => {
-    const div = document.createElement("div");
-    div.className = "cell";
-    div.dataset.ring = "rat";
-    div.dataset.i = i;
-    div.innerHTML = `<span class="icon">${cellIcon(t)}</span>${cellLabel(t, state.ratLabels)}`;
-    div.style.background = state.boardMeta.ratColors[t];
-    board.appendChild(div);
+    const el = document.createElement("div");
+    el.className = "wheel-label rl";
+    el.dataset.i = i;
+    el.innerHTML = `<span class="wli">${cellIcon(t)}</span>`;
+    el.title = (state.ratLabels[t] || t).replace(/\n/g, " ");
+    board.appendChild(el);
   });
   state.fastBoard.forEach((t, i) => {
-    const div = document.createElement("div");
-    div.className = "cell small";
-    div.dataset.ring = "fast";
-    div.dataset.i = i;
-    div.innerHTML = `<span class="icon">${cellIcon(t)}</span>${cellLabel(t, state.fastLabels)}`;
-    div.style.background = state.boardMeta.fastColors[t];
-    board.appendChild(div);
+    const el = document.createElement("div");
+    el.className = "wheel-label fl";
+    el.dataset.i = i;
+    el.innerHTML = `<span class="wli">${cellIcon(t)}</span>`;
+    el.title = (state.fastLabels[t] || t).replace(/\n/g, " ");
+    board.appendChild(el);
   });
-  const logo = document.createElement("div");
-  logo.className = "center-logo";
-  logo.innerHTML = `<div class="ft">PISTA RÁPIDA</div><div class="arrow">➤</div><h2>CASHFLOW</h2>`;
-  board.appendChild(logo);
+
+  const center = document.createElement("div");
+  center.className = "wheel-center";
+  center.innerHTML = `<div class="ft">PISTA RÁPIDA</div><div class="arrow">➤</div><h2>CASHFLOW</h2>`;
+  board.appendChild(center);
 }
 
 function renderBoard() {
   const board = $("board");
-  board.querySelectorAll(".cell[data-ring=rat]").forEach((c) => {
-    const i = +c.dataset.i;
-    const p = boardPos(24, i, 0.92);
-    c.style.left = p.x + "px";
-    c.style.top = p.y + "px";
+  const W = board.clientWidth, H = board.clientHeight;
+  const dim = Math.min(W, H);
+  const rw = board.querySelector(".wheel-ring.rat");
+  const fw = board.querySelector(".wheel-ring.fast");
+  if (rw) { rw.style.width = rw.style.height = (0.92 * dim) + "px"; }
+  if (fw) { fw.style.width = fw.style.height = (0.58 * dim) + "px"; }
+
+  board.querySelectorAll(".wheel-label.rl").forEach((el) => {
+    const p = boardPos(24, +el.dataset.i, 0.85);
+    el.style.left = p.x + "px"; el.style.top = p.y + "px";
   });
-  board.querySelectorAll(".cell[data-ring=fast]").forEach((c) => {
-    const i = +c.dataset.i;
-    const p = boardPos(12, i, 0.58);
-    c.style.left = p.x + "px";
-    c.style.top = p.y + "px";
+  board.querySelectorAll(".wheel-label.fl").forEach((el) => {
+    const p = boardPos(12, +el.dataset.i, 0.52);
+    el.style.left = p.x + "px"; el.style.top = p.y + "px";
   });
   renderTokens();
 }
@@ -348,15 +363,17 @@ async function animateDice(values) {
 
 /* ================= Animación de movimiento ================= */
 
-function cellFor(ring, i) {
-  return document.querySelector(`.cell[data-ring="${ring}"][data-i="${i}"]`);
-}
-
 function flashCell(ring, i, cls = "flash") {
-  const c = cellFor(ring, i);
-  if (!c) return;
-  c.classList.add(cls);
-  setTimeout(() => c.classList.remove(cls), 220);
+  const n = ring === "rat" ? 24 : 12;
+  const radius = ring === "rat" ? 0.92 : 0.58;
+  const px = boardPos(n, i, radius);
+  const board = $("board");
+  const ind = document.createElement("div");
+  ind.className = "cell-indicator " + cls;
+  ind.style.left = px.x + "px";
+  ind.style.top = px.y + "px";
+  board.appendChild(ind);
+  setTimeout(() => ind.remove(), cls === "landing" ? 1100 : 220);
 }
 
 async function animateMove(move) {
@@ -377,8 +394,7 @@ async function animateMove(move) {
     await sleep(170);
   }
   if (t) { t.classList.remove("moving"); t.classList.add("landed"); }
-  const cell = cellFor(ring, move.to);
-  if (cell) { cell.classList.add("landing"); setTimeout(() => cell.classList.remove("landing"), 1100); }
+  flashCell(ring, move.to, "landing");
   setTimeout(() => t && t.classList.remove("landed"), 700);
 }
 
