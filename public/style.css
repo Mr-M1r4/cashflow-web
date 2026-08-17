@@ -123,6 +123,17 @@ input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgb
 .rules-body {
   display: flex; flex-direction: column; gap: 6px;
   padding: 0 14px 12px;
+  max-height: 55vh; overflow-y: auto;
+}
+.rules-intro {
+  font-size: 12px; color: var(--muted); line-height: 1.45;
+  margin-bottom: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.rules-intro b { color: var(--text); }
+.rules-sep {
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  color: var(--gold); letter-spacing: 0.5px;
+  margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border);
 }
 .rule {
   display: flex; align-items: center; gap: 8px;
