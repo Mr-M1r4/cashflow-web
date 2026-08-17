@@ -465,3 +465,110 @@ def test_full_game_reaches_over():
     run(play())
     assert g.phase == "over"
     assert g.winner_id is not None
+
+
+# ------------------------------------------------ info-card / can't-afford flows
+
+def test_unaffordable_stock_sets_last_card_no_pending():
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = next(c for c in data.SMALL_DEALS if c["kind"] == "stock" and c["price"] > 1)
+    run(g.handle_deal(p, card, "small"))
+    assert g.last_card is not None
+    assert g.last_card["deck"] == "small"
+    assert g.last_card["maxShares"] == 0
+    assert g.pending is None
+    assert p["cash"] == 1
+
+
+def test_unaffordable_realestate_sets_last_card_no_pending():
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = data.BIG_DEALS[0]
+    run(g.handle_deal(p, card, "big"))
+    assert g.last_card is not None
+    assert g.last_card["deck"] == "big"
+    assert g.last_card["afford"] is False
+    assert g.pending is None
+    assert p["cash"] == 1
+    assert not p["realEstate"]
+
+
+def test_unaffordable_doodad_sets_last_card_no_pending():
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = data.DOODADS[0]
+    run(g.handle_doodad(p, card))
+    assert g.last_card is not None
+    assert g.last_card["deck"] == "doodad"
+    assert g.last_card["afford"] is False
+    assert g.pending is None
+    assert p["cash"] == 1
+
+
+def test_unaffordable_market_stock_sets_last_card_no_pending():
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1
+    card = next(c for c in data.MARKET_CARDS if c["kind"] == "stockBuy" and c["price"] > 1)
+    run(g.handle_market(p, card))
+    assert g.last_card is not None
+    assert g.last_card["deck"] == "market"
+    assert g.last_card["maxShares"] == 0
+    assert g.pending is None
+    assert p["cash"] == 1
+
+
+def test_affordable_stock_sets_pending():
+    g, _ = make_game()
+    p = g.players[0]
+    p["cash"] = 1000
+    card = next(c for c in data.SMALL_DEALS if c["kind"] == "stock" and c["price"] <= 1000)
+    answer(g, "p0", {"type": "choice", "value": {"shares": 5}})
+    run(g.handle_deal(p, card, "small"))
+    assert g.last_card is not None
+    assert g.pending is None
+
+
+def test_last_card_cleared_on_new_turn():
+    g, _ = make_game()
+    p = g.players[0]
+    g.last_card = {"deck": "small", "card": data.SMALL_DEALS[0], "afford": False}
+    p["position"] = data.RAT_RACE_BOARD.index("PAYDAY")
+    # do_turn resets last_card to None before roll, then resolve may set it again.
+    # We monkeypatch do_turn to verify the reset happens at the top.
+    old_do_turn = g.__class__.do_turn
+    cleared_at_entry = [False]
+
+    async def instrumented_do_turn(self, p):
+        if self.last_card is not None:
+            self.last_card = None
+            cleared_at_entry[0] = True
+        return await old_do_turn(self, p)
+
+    g.__class__.do_turn = instrumented_do_turn
+    answer(g, "p0", {"type": "roll"})
+    run(g.do_turn(p))
+    assert cleared_at_entry[0]
+
+
+def test_last_card_cleared_before_roll():
+    g, _ = make_game()
+    p = g.players[0]
+    g.last_card = {"deck": "old", "card": {}}
+    old_wait_for = g.wait_for
+    saw_none = [False]
+
+    async def patched_wait(pid, kinds, default=None):
+        if "roll" in kinds and g.last_card is None:
+            saw_none[0] = True
+        return await old_wait_for(pid, kinds, default)
+
+    g.wait_for = patched_wait
+    answer(g, "p0", {"type": "roll"})
+    p["position"] = data.RAT_RACE_BOARD.index("PAYDAY")
+    run(g.do_turn(p))
+    assert saw_none[0]

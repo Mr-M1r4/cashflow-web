@@ -201,6 +201,7 @@ class Game:
         self.room.broadcast_state()
 
     async def do_turn(self, p):
+        self.last_card = None
         if p["downsizedTurns"] > 0:
             p["downsizedTurns"] -= 1
             self._log(f"💼 {p['name']} sigue despedido ({p['downsizedTurns']} turnos sin salario).")
@@ -392,10 +393,10 @@ class Game:
     async def handle_market(self, p, card):
         if card["kind"] == "stockBuy":
             max_shares = int(p["cash"] // card["price"])
+            self.last_card = {"deck": "market", "card": card, "maxShares": max_shares}
             if max_shares <= 0:
                 self._log(f"{p['name']} no tiene efectivo para aprovechar la oferta de {card['symbol']}.")
                 return
-            self.last_card = {"deck": "market", "card": card, "maxShares": max_shares}
             msg = await self.wait_for(p["id"], {"choice"}, default={"type": "choice", "value": {"shares": 0}})
             shares = int(msg["value"].get("shares", 0) or 0)
             if shares > 0:

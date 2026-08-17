@@ -490,27 +490,31 @@ function renderTurnPill() {
 
 /* ================= Modales ================= */
 
-let _infoShown = null;
+let _infoCardKey = null;
 
 function renderModal() {
   const modal = $("modal");
-  if (state.phase === "lobby") { modal.classList.add("hidden"); modal.innerHTML = ""; _infoShown = null; return; }
+  if (state.phase === "lobby") { modal.classList.add("hidden"); modal.innerHTML = ""; _infoCardKey = null; return; }
 
-  if (state.phase === "selecting") { showSelection(modal); _infoShown = null; return; }
-  if (state.phase === "over") { showWin(modal); _infoShown = null; return; }
+  if (state.phase === "selecting") { showSelection(modal); _infoCardKey = null; return; }
+  if (state.phase === "over") { showWin(modal); _infoCardKey = null; return; }
 
   const pending = state.pending;
   if (pending && pending.playerId === yourId) {
-    _infoShown = null;
+    _infoCardKey = null;
     if (pending.kind === "roll") { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
     showChoice(modal);
     return;
   }
 
-  if (!pending && state.lastCard && state.lastCard !== _infoShown) {
-    _infoShown = state.lastCard;
-    showInfoCard(modal);
-    return;
+  const lc = state.lastCard;
+  if (!pending && lc) {
+    const key = JSON.stringify(lc);
+    if (key !== _infoCardKey) {
+      _infoCardKey = key;
+      showInfoCard(modal);
+      return;
+    }
   }
 
   modal.classList.add("hidden");
@@ -586,6 +590,18 @@ function showInfoCard(modal) {
       <div class="card-name">${card.name}</div>
       <div class="price-row"><span>Precio</span><span class="val">${usd.format(card.cost)}</span></div>
       <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo suficiente.</div>
+      <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
+    </div>`;
+    return;
+  }
+
+  if (lc.deck === "market") {
+    const card = lc.card;
+    modal.innerHTML = `<div class="modal-box">
+      <div class="card-type">📈 Mercado · Consejo del broker</div>
+      <div class="card-name">${card.title}</div>
+      <div class="card-text">${card.text}</div>
+      <div class="hint" style="color:var(--red)">⚠️ No tenés efectivo para aprovechar la oferta.</div>
       <div class="modal-actions"><button onclick="this.closest('.modal').classList.add('hidden')">Cerrar</button></div>
     </div>`;
     return;
