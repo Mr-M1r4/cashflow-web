@@ -501,8 +501,8 @@ function renderModal() {
 
   const pending = state.pending;
   if (pending && pending.playerId === yourId) {
-    _infoCardKey = null;
-    if (pending.kind === "roll") { modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+    if (pending.kind === "roll") { _infoCardKey = null; modal.classList.add("hidden"); modal.innerHTML = ""; return; }
+    _infoCardKey = state.lastCard ? JSON.stringify(state.lastCard) : null;
     showChoice(modal);
     return;
   }
@@ -513,8 +513,8 @@ function renderModal() {
     if (key !== _infoCardKey) {
       _infoCardKey = key;
       showInfoCard(modal);
-      return;
     }
+    return;
   }
 
   modal.classList.add("hidden");
