@@ -233,24 +233,30 @@ function renderPlayers() {
     const f = fin(p);
     const card = document.createElement("div");
     card.className = "player-card";
-    card.style.borderLeftColor = COLORS[playerIndex(p.id)];
+    card.style.setProperty("--pc", COLORS[playerIndex(p.id)]);
     const cur = state.players[state.turnIndex];
     if (state.phase === "playing" && cur && cur.id === p.id) card.classList.add("turn");
     if (p.won) card.classList.add("winner");
     const esc = !p.inFastTrack && f.passive > f.expenses && state.phase === "playing";
+    const escPct = f.expenses > 0 ? Math.min(100, Math.round((f.passive / f.expenses) * 100)) : 0;
+    const pct = p.inFastTrack ? 100 : Math.max(0, escPct);
     card.innerHTML = `
-      <div class="pc-head">
-        <span class="pc-dot" style="background:${COLORS[playerIndex(p.id)]}"></span>
-        ${p.name} ${p.id === yourId ? "(vos)" : ""}
+      <div class="pc-top">
+        <span class="pc-dot"></span>
+        <span class="pc-name">${p.name} ${p.id === yourId ? "(vos)" : ""}</span>
         <span class="badge ${p.inFastTrack ? "ft" : ""}">${p.inFastTrack ? "🚀 Pista rápida" : "🐀 Ratas"}${p.downsizedTurns > 0 ? " · 💼" : ""}</span>
       </div>
       <div class="pc-sub">${p.profession ? p.profession.name : "—"} · Hijos: ${p.children}${esc ? " · <b style='color:var(--green)'>¡ESCAPA!</b>" : ""}</div>
+      <div class="pc-hero">
+        <div class="pc-hero-label">Efectivo</div>
+        <div class="pc-hero-cash">${usd.format(p.cash)}</div>
+        <div class="pc-hero-cf ${f.cf >= 0 ? "pos" : "neg"}">${f.cf >= 0 ? "▲" : "▼"} ${usd.format(Math.abs(f.cf))}/mes</div>
+      </div>
+      <div class="esc-track ${p.inFastTrack ? "ft" : ""}"><div class="esc-fill" style="width:${pct}%"></div></div>
       <div class="statement">
-        <span class="label">Efectivo</span><span class="value">${usd.format(p.cash)}</span>
         <span class="label">Salario</span><span class="value ${f.salary ? "pos" : "neg"}">${usd.format(f.salary)}</span>
         <span class="label">Pasivo</span><span class="value pos">+${usd.format(f.passive)}</span>
         <span class="label">Gastos</span><span class="value neg">-${usd.format(f.expenses)}</span>
-        <span class="label"><b>Flujo</b></span><span class="value ${f.cf >= 0 ? "pos" : "neg"}"><b>${f.cf >= 0 ? "+" : ""}${usd.format(f.cf)}</b></span>
       </div>
       <details class="pc-assets">
         <summary>Activos y pasivos</summary>
